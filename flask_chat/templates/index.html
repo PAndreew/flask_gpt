@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        <style>
+            .chat-window {
+                max-width: 600px;
+                margin: auto;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 300px;
+                overflow: auto;
+                padding: 10px;
+            }
+            .chat-message {
+                margin-bottom: 10px;
+                padding: 10px;
+                border: 1px solid black;
+            }
+            .client-message {
+                background-color: white;
+                text-align: left;
+            }
+            .ai-message {
+                background-color: #e9d6f2;
+                text-align: right;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="chat-window">
+                <ul id="messages" class="list-group"></ul>
+                <div class="input-group">
+                    <input id="m" class="form-control" autocomplete="off" />
+                    <button id="send" class="btn btn-outline-dark">Send</button>
+                </div>
+            </div>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+        <script>
+            $(document).ready(function() {
+                var socket = io();
+
+                $('#send').click(sendMessage);
+                $('#m').keypress(function (e) {
+                    if (e.which == 13) {  // Enter key
+                        sendMessage();
+                    }
+                });
+
+                socket.on('message', function(msg){
+                    var listItem = $('<li>').addClass('chat-message').text(msg);
+                    if (msg.includes('Assistant:')) {
+                        listItem.addClass('ai-message');
+                    } else {
+                        listItem.addClass('client-message');
+                    }
+                    $('#messages').append(listItem);
+                    $('.chat-window').scrollTop($('.chat-window')[0].scrollHeight);
+                });
+
+                function sendMessage() {
+                    var message = $('#m').val();
+                    socket.emit('message', message);
+                    $('#messages').append($('<li>').addClass('chat-message client-message').text('You: ' + message));
+                    $('#m').val('');
+                    $('.chat-window').scrollTop($('.chat-window')[0].scrollHeight);
+                    return false;
+                }
+            });
+        </script>
+    </body>
+</html>

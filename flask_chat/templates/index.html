@@ -59,9 +59,10 @@
                     }
                 });
 
-                socket.on('message', function(msg){
-                    var listItem = $('<li>').addClass('chat-message').text(msg);
-                    if (msg.includes('Assistant:')) {
+                socket.on('message', function(data){
+                    var listItem = $('<li>').addClass('chat-message');
+                    listItem.text(data.msg);
+                    if (data.sender == 'ai') {
                         listItem.addClass('ai-message');
                     } else {
                         listItem.addClass('client-message');
@@ -73,11 +74,11 @@
                 function sendMessage() {
                     var message = $('#m').val();
                     socket.emit('message', message);
-                    $('#messages').append($('<li>').addClass('chat-message client-message').text('You: ' + message));
                     $('#m').val('');
                     $('.chat-window').scrollTop($('.chat-window')[0].scrollHeight);
                     return false;
                 }
+
             });
         </script>
     </body>

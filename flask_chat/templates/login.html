@@ -10,10 +10,12 @@
             <div id="chat-window" class="p-3">
                 <img src="{{ url_for('static', filename='logo.svg') }}" alt="Logo" width="150" height="120" class="d-inline-block align-top">
             </div>
-            <div id="buttonContainer" class="p-3 d-flex justify-content-center">
-                <a href="/signup" class="btn btn-dark m-2 shadow">Sign Up</a>
-                <a href="/login" class="btn btn-outline-dark m-2 shadow">Log In</a>
-            </div>
+            <form action="/login" method="post" id="loginForm" class="p-3">
+                <div id="loginContainer" class="p-3 d-flex justify-content-center">
+                    <input id="loginForm" class="p-3 form-control shadow-sm" autocomplete="off" name="username" placeholder="Username" required/>
+                    <button type="submit" id="send" class="btn btn-outline-dark shadow-sm">Log In</button>
+                </div>
+            </form>
         </div>
         
         <script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script>

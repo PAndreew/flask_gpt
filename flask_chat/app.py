@@ -44,6 +44,8 @@ def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'secret!'
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///messages.db'
+    app.config['SESSION_COOKIE_SECURE'] = True
+
 
     db.init_app(app)
     socketio.init_app(app)

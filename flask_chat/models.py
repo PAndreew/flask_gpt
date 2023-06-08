@@ -6,3 +6,8 @@ class Message(db.Model):
 
     def __repr__(self):
         return '<Message %r>' % self.text
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True)
+    color = db.Column(db.String(7)) # for storing color in HEX format

@@ -3,48 +3,29 @@
     <head>
         <title>Chat</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-        <style>
-            .chat-window {
-                max-width: 600px;
-                margin: auto;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                height: 300px;
-                overflow: auto;
-                padding: 10px;
-            }
-            .chat-message {
-                margin-bottom: 10px;
-                padding: 10px;
-                border: 1px solid black;
-            }
-            .client-message {
-                background-color: white;
-                text-align: left;
-            }
-            .ai-message {
-                background-color: #e9d6f2;
-                text-align: right;
-            }
-            .form-control:focus {
-                border-color: #46022e; /* default B5 color or set your own color*/
-                outline: none !important;
-                box-shadow: none !important;
-            } 
-        </style>
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='custom_styles.css') }}">
     </head>
     <body>
-        <div class="container">
-            <div class="chat-window">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <img src="{{ url_for('static', filename='logo.svg') }}" alt="Logo" width="60" height="48" class="d-inline-block align-top">
+                </a>
+            </div>
+        </nav>
+        
+        <div class="container custom-container p-0">
+            <div id="chat-window" class="p-3" style="height: calc(100vh - 170px); overflow-y: auto;">
                 <ul id="messages" class="list-group"></ul>
+            </div>
+            <div id="inputContainer" class="p-3 bg-white">
                 <div class="input-group">
-                    <input id="m" class="form-control" autocomplete="off" />
-                    <button id="send" class="btn btn-outline-dark">Send</button>
+                    <input id="m" class="form-control shadow-sm" autocomplete="off" />
+                    <button id="send" class="btn btn-outline-dark shadow-sm">Send</button>
                 </div>
             </div>
         </div>
+        
         <script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
@@ -60,22 +41,25 @@
                 });
 
                 socket.on('message', function(data){
-                    var listItem = $('<li>').addClass('chat-message');
-                    listItem.text(data.msg);
+                    var card = $('<div>').addClass('card chat-message mb-3');
+                    var cardBody = $('<div>').addClass('card-body').text(data.msg);
+                    card.append(cardBody);
+
                     if (data.sender == 'ai') {
-                        listItem.addClass('ai-message');
+                        card.addClass('ai-message');
                     } else {
-                        listItem.addClass('client-message');
+                        card.addClass('client-message');
                     }
-                    $('#messages').append(listItem);
-                    $('.chat-window').scrollTop($('.chat-window')[0].scrollHeight);
+                    
+                    $('#messages').append(card);
+                    $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
                 });
 
                 function sendMessage() {
                     var message = $('#m').val();
                     socket.emit('message', message);
                     $('#m').val('');
-                    $('.chat-window').scrollTop($('.chat-window')[0].scrollHeight);
+                    $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
                     return false;
                 }
 

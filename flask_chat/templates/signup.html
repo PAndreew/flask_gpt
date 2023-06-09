@@ -11,7 +11,7 @@
             <div id="chat-window" class="p-3">
                 <img src="{{ url_for('static', filename='logo.svg') }}" alt="Logo" width="150" height="120" class="d-inline-block align-top">
             </div>
-            <form action="/signup" method="post" id="signupForm" class="p-3">
+            <form action="/auth/signup" method="post" id="signupForm" class="p-3">
                 <div id="signupContainer" class="p-3 d-flex justify-content-center">
                     <input id="signupForm" class="p-3 form-control shadow-sm" autocomplete="off" name="username" placeholder="Username" required/>
                     <button type="submit" id="send" class="btn btn-outline-dark shadow-sm">Sign Up</button>

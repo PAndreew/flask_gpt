@@ -3,6 +3,10 @@
     text-align: right;
 }
 
+.btn-dark {
+    color: white !important;
+}
+
 .btn-dark:hover {
     background-color: #ffffff;
     color: black;

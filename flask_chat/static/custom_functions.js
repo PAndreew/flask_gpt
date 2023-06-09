@@ -31,7 +31,7 @@ $(document).ready(function() {
 
     function sendMessage() {
         var message = $('#m').val();
-        socket.emit('message', message);
+        socket.emit('message', { message: message, room_id: roomId });
         $('#m').val('');
         $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
         return false;

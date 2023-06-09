@@ -1,20 +1,10 @@
 from flask import Blueprint, request, session, redirect, url_for, render_template
-from flask_socketio import emit, join_room
-from ..app import db, socketio, chatgpt_chain
+from flask_socketio import join_room
+from ..app import db, socketio
 from ..models import Message, User, Room, UserRoom
-from ..utils import generate_light_color
 
-room_blueprint = Blueprint('room', __name__)
+rooms_blueprint = Blueprint('room', __name__)
 
-
-@room_blueprint.route('/')
-def index():
-    if 'username' in session:
-        # The user is logged in, so redirect them to the chat page
-        return render_template('rooms.html')
-    else:
-        # The user is not logged in, so show the login page
-        return render_template('index.html')
 
 @socketio.on('join')
 def on_join(data):
@@ -34,7 +24,7 @@ def on_join(data):
     join_room(room_id)
 
 
-@room_blueprint.route('/rooms', methods=['GET', 'POST'])
+@rooms_blueprint.route('/rooms', methods=['GET', 'POST'])
 def rooms():
     if 'username' not in session:
         # The user is not logged in, so redirect them to the login page
@@ -62,11 +52,11 @@ def rooms():
         rooms = Room.query.join(UserRoom).filter(UserRoom.user_id == user.id).all()
         return render_template('rooms.html', rooms=rooms)
     
-@chat_blueprint.route('/room/<int:room_id>')
+@rooms_blueprint.route('/room/<int:room_id>')
 def room(room_id):
     if 'username' not in session:
         # The user is not logged in, so redirect them to the login page
-        return redirect(url_for('room.index'))
+        return redirect(url_for('auth.login'))
 
     # Show the chat page for the room
-    return render_template('room.html', room_id=room_id)
+    return render_template('chat.html', room_id=room_id)

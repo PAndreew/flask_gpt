@@ -34,7 +34,7 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user:
             session['username'] = user.username
-            return redirect(url_for('chat.chat'))
+            return redirect(url_for('rooms.rooms'))
         else:
             return redirect(url_for('auth.signup'))
     return render_template('login.html')

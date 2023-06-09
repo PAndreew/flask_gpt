@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, Blueprint, session, redirect, url_for, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
 from langchain import OpenAI, ConversationChain, LLMChain, PromptTemplate
@@ -46,7 +46,15 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///messages.db'
     app.config['SESSION_COOKIE_SECURE'] = True
 
-
+    @app.route('/')
+    def index():
+        if 'username' in session:
+            # The user is logged in, so redirect them to the chat page
+            return redirect(url_for('room.rooms'))
+        else:
+            # The user is not logged in, so show the login page
+            return render_template('index.html')
+            
     db.init_app(app)
     socketio.init_app(app)
 

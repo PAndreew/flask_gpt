@@ -4,9 +4,11 @@ from flask_chat.app import db
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(500), nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'))  # A message is associated with a room
 
     def __repr__(self):
         return '<Message %r>' % self.text
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -16,22 +18,23 @@ class User(db.Model):
 
 class Room(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    autoincrement=True
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    llmchain_state = db.relationship('LLMChainState', uselist=False, back_populates='room')
+    aimodels = db.relationship('AIModel', backref='associated_room', lazy='dynamic')
+    users = db.relationship('UserRoom', back_populates='room')  # Added this relationship
+    messages = db.relationship('Message', lazy='dynamic')  # Messages in this room
 
 class UserRoom(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), primary_key=True)
     user = db.relationship("User", back_populates="rooms")
     room = db.relationship("Room", back_populates="users")
-    users = db.relationship('UserRoom', back_populates='room')
 
 class AIModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     model_type = db.Column(db.String(50), nullable=False)  # e.g., "LLM", "Generative", etc.
     state = db.Column(db.PickleType)  # Serialized state for LLM
-    room_id = db.Column(db.Integer, db.ForeignKey('room.id'))  # The room the AI model is in
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)  # The room the AI model is in
 
     # Define relationship with Room
-    room = db.relationship('Room', back_populates='ai_models')
+    room = db.relationship('Room', back_populates='aimodels')  # corrected 'ai_models' to 'aimodels'
+

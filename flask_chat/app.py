@@ -50,10 +50,15 @@ def create_app():
     db.init_app(app)
     socketio.init_app(app)
 
-    # Register the routes and other components
-    from .routes import chat_blueprint  # Import the blueprint
-    
-    app.register_blueprint(chat_blueprint, url_prefix='/')  # Register the blueprint
+    # Import the routes and other components
+    from .routes.auth import auth_blueprint
+    from .routes.chat import chat_blueprint
+    from .routes.rooms import rooms_blueprint
+
+    # Register the blueprints
+    app.register_blueprint(auth_blueprint, url_prefix='/auth')
+    app.register_blueprint(chat_blueprint, url_prefix='/chat')
+    app.register_blueprint(rooms_blueprint, url_prefix='/rooms')
     
     with app.app_context():
         db.create_all()  # Create database tables for our data models

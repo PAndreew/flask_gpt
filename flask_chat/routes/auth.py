@@ -34,7 +34,7 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user:
             session['username'] = user.username
-            return redirect(url_for('rooms.rooms'))
+            return redirect(url_for('chat.chat'))
         else:
             return redirect(url_for('auth.signup'))
     return render_template('login.html')
@@ -42,4 +42,4 @@ def login():
 @auth_blueprint.route('/logout')
 def logout():
     session.clear()  # Clear the session
-    return redirect(url_for('chat.index'))  # Redirect to the login page
+    return redirect(url_for('auth.login'))  # Redirect to the login page

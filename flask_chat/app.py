@@ -50,7 +50,7 @@ def create_app():
     def index():
         if 'username' in session:
             # The user is logged in, so redirect them to the chat page
-            return redirect(url_for('room.rooms'))
+            return redirect(url_for('chat.chat'))
         else:
             # The user is not logged in, so show the login page
             return render_template('index.html')

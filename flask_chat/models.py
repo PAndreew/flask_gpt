@@ -15,6 +15,8 @@ class User(db.Model):
     username = db.Column(db.String(64), unique=True)
     color = db.Column(db.String(7)) # for storing color in HEX format
     rooms = db.relationship('UserRoom', back_populates='user')
+    sent_invitations = db.relationship('Invitation', foreign_keys='Invitation.sender_id', backref='sender', lazy='dynamic')
+    received_invitations = db.relationship('Invitation', foreign_keys='Invitation.receiver_id', backref='receiver', lazy='dynamic')
 
 class Room(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -38,3 +40,14 @@ class AIModel(db.Model):
     # Define relationship with Room
     room = db.relationship('Room', back_populates='aimodels')  # corrected 'ai_models' to 'aimodels'
 
+class Invitation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    status = db.Column(db.String(50), nullable=False, default="pending")
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    message = db.Column(db.String(500), nullable=False)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)

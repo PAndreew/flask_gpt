@@ -1,7 +1,9 @@
-from flask import Blueprint, request, session, redirect, url_for, render_template
+from flask import Blueprint, session, redirect, url_for, render_template, jsonify, flash, make_response
+from flask_login import current_user, login_required
 from flask_socketio import join_room
 from ..app import db, socketio
 from ..models import Message, User, Room, UserRoom
+from ..utils import notify_user
 
 rooms_blueprint = Blueprint('room', __name__)
 
@@ -12,6 +14,11 @@ def on_join(data):
     username = session.get('username')
     user = User.query.filter_by(username=username).first()
 
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        response = jsonify({"error": "User not found."})
+        return make_response(response, 404)
+    
     # Check if the user is a member of the room
     user_room = UserRoom.query.filter_by(user_id=user.id, room_id=room_id).first()
 
@@ -24,39 +31,49 @@ def on_join(data):
     join_room(room_id)
 
 
-@rooms_blueprint.route('/rooms', methods=['GET', 'POST'])
-def rooms():
-    if 'username' not in session:
-        # The user is not logged in, so redirect them to the login page
-        return redirect(url_for('room.index'))
+@rooms_blueprint.route('/room/<int:room_id>', methods=['GET'])
+def room(room_id):
+    room = Room.query.get(room_id)
+    if not room or current_user not in room.users:
+        flash('Room not found or you are not a part of this room.')
+        return redirect(url_for('chat_blueprint.chat'))
 
-    if request.method == 'POST':
-        # Create a new room
-        room = Room()
-        db.session.add(room)
-        db.session.commit()
+    messages = Message.query.filter_by(room_id=room.id).all()  # Get the room's messages.
+    return render_template('chat.html', room=room, messages=messages)
 
-        # Add the user to the room
-        username = session.get('username')
-        user = User.query.filter_by(username=username).first()
+@rooms_blueprint.route('/create_room/<int:user_id>', methods=['POST'])
+@login_required
+def create_room(user_id):
+    user = User.query.get(user_id)
+    if not user or user == current_user:
+        return jsonify({"error": "Invalid user."}), 400
+
+    room = Room()
+    db.session.add(room)
+    db.session.flush()  # This is needed to generate room.id
+
+    # Link the current user and the selected user to the new room.
+    for user in [current_user, user]:
         user_room = UserRoom(user_id=user.id, room_id=room.id)
         db.session.add(user_room)
-        db.session.commit()
-
-        return redirect(url_for('chat.room', room_id=room.id))
-
-    else:
-        # Show the rooms page
-        username = session.get('username')
-        user = User.query.filter_by(username=username).first()
-        rooms = Room.query.join(UserRoom).filter(UserRoom.user_id == user.id).all()
-        return render_template('rooms.html', rooms=rooms)
     
-@rooms_blueprint.route('/room/<int:room_id>')
-def room(room_id):
-    if 'username' not in session:
-        # The user is not logged in, so redirect them to the login page
-        return redirect(url_for('auth.login'))
+    db.session.commit()
 
-    # Show the chat page for the room
-    return render_template('chat.html', room_id=room_id)
+    # Notify the selected user about the new room.
+    # This is just a placeholder, the actual implementation will depend on how you're handling notifications.
+    notify_user(user, f"You have been invited to a new chat room by {current_user.username}")
+
+    return jsonify({"message": "Room created successfully.", "room_id": room.id}), 200
+
+@rooms_blueprint.route('/accept_invitation/<int:room_id>', methods=['POST'])
+@login_required
+def accept_invitation(room_id):
+    user_room = UserRoom.query.filter_by(user_id=current_user.id, room_id=room_id).first()
+
+    if not user_room:
+        return jsonify({"error": "Invalid room."}), 400
+
+    user_room.status = 'accepted'  # Assume you added a status field to UserRoom.
+    db.session.commit()
+
+    return jsonify({"message": "You have joined the room."}), 200

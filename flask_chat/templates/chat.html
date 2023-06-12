@@ -13,8 +13,10 @@
                 </a>
         
                 <form class="d-flex my-2 my-lg-0 mx-auto">
-                    <input id="search" class="form-control me-2" type="search" placeholder="Search users" aria-label="Search">
-                    <div id="searchResults" class="list-group position-absolute"></div>
+                    <div class="position-relative w-100">
+                        <input id="search" class="form-control me-2" type="search" placeholder="Search users" aria-label="Search">
+                        <div id="searchResults" class="list-group position-absolute w-100" style="top:100%; z-index:999;"></div>
+                    </div>
                 </form>
         
                 <ul class="navbar-nav">

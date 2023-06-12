@@ -45,3 +45,11 @@
 #chat-window {
     margin-top: 70px;
 }
+
+/* #sidebar, #chat-window {
+    height: 100%;
+} */
+
+#sidebar {
+    z-index: 2;
+}

@@ -1,8 +1,7 @@
-from flask import Blueprint, request, session, redirect, url_for, render_template
-from flask_socketio import emit, join_room
-from ..app import db, socketio, chatgpt_chain
+from flask import Blueprint, request, session, redirect, url_for, render_template, jsonify
+from flask_socketio import emit
+from ..app import db, socketio
 from ..models import Message, User, Room, UserRoom
-from ..utils import generate_light_color
 
 chat_blueprint = Blueprint('chat', __name__)
 
@@ -62,9 +61,10 @@ def handleMessage(data):
             # Broadcast the AI response to all clients in the room
             emit('message', {'msg': 'Assistant: ' + ai_output, 'sender': 'ai'}, room=room_id)
 
-@chat_blueprint.route('/search', methods=['GET', 'POST'])
+@chat_blueprint.route('/search', methods=['GET'])
 def search():
-    if request.method == 'POST':
-        query = request.form.get('search')
-        results = User.query.filter(User.username.like('%' + query + '%')).all()
-        return render_template('search_results.html', results=results)
+    query = request.args.get('query', '')  # Get query parameter from the URL
+    results = User.query.filter(User.username.like('%' + query + '%')).all()
+    users = [user.username for user in results]  # Convert User objects to a list of usernames
+    return jsonify(users)  # Return the results as JSON
+

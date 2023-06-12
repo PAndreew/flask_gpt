@@ -41,4 +41,24 @@ $(document).ready(function() {
             window.location.href = '/login';
         });
     });
+
+    $("#search").keyup(function() {
+        var query = $(this).val();
+        if (query != "") {
+            $.ajax({
+                url: '/chat/search',  // The search endpoint
+                method: 'GET',
+                data: {query: query},
+                success: function(data) {
+                    // 'data' is a list of usernames
+                    $('#searchResults').empty(); // Clear previous results
+                    data.forEach(function(user){
+                        $('#searchResults').append('<a href="#" class="list-group-item list-group-item-action">'+user+'</a>');
+                    });
+                }
+            });
+        } else {
+            $('#searchResults').empty();
+        }
+    });
 });

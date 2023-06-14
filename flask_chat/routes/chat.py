@@ -1,18 +1,16 @@
-from flask import Blueprint, request, session, redirect, url_for, render_template, jsonify
+from flask import Blueprint, request, session, render_template, jsonify
 from flask_socketio import emit
+from flask_login import login_required
 from ..app import db, socketio
 from ..models import Message, User, Room, UserRoom
 
 chat_blueprint = Blueprint('chat', __name__)
 
 @chat_blueprint.route('/chat')
+@login_required
 def chat():
-    if 'username' not in session:
-        # The user is not logged in, so redirect them to the login page
-        return redirect(url_for('auth.login'))
-    else:
-        # The user is logged in, so show the chat page
-        return render_template('chat.html')
+    # The user is logged in, so show the chat page
+    return render_template('chat.html')
     
 @socketio.on('message')
 def handleMessage(data):
@@ -63,8 +61,8 @@ def handleMessage(data):
 
 @chat_blueprint.route('/search', methods=['GET'])
 def search():
-    query = request.args.get('query', '')  # Get query parameter from the URL
+    query = request.args.get('query', '')  # Get the query parameter from the URL
     results = User.query.filter(User.username.like('%' + query + '%')).all()
-    users = [user.username for user in results]  # Convert User objects to a list of usernames
+    users = [{"id": user.id, "username": user.username} for user in results]  # Convert User objects to a list of dictionaries with id and username
     return jsonify(users)  # Return the results as JSON
 

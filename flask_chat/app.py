@@ -1,4 +1,5 @@
 from flask import Flask, Blueprint, session, redirect, url_for, render_template
+from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
 from langchain import OpenAI, ConversationChain, LLMChain, PromptTemplate
@@ -45,6 +46,7 @@ def create_app():
     app.config['SECRET_KEY'] = 'secret!'
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///messages.db'
     app.config['SESSION_COOKIE_SECURE'] = True
+    login_manager = LoginManager(app)  # This line is essential
 
     @app.route('/')
     def index():
@@ -56,7 +58,13 @@ def create_app():
             return render_template('index.html')
             
     db.init_app(app)
+    # db = SQLAlchemy(app)
     socketio.init_app(app)
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        from .models import User  # Import User model here to avoid circular import
+        return User.query.get(user_id)
 
     # Import the routes and other components
     from .routes.auth import auth_blueprint

@@ -46,19 +46,79 @@ $(document).ready(function() {
         var query = $(this).val();
         if (query != "") {
             $.ajax({
-                url: '/chat/search',  // The search endpoint
+                url: '/chat/search',
                 method: 'GET',
                 data: {query: query},
                 success: function(data) {
-                    // 'data' is a list of usernames
                     $('#searchResults').empty(); // Clear previous results
                     data.forEach(function(user){
-                        $('#searchResults').append('<a href="#" class="list-group-item list-group-item-action">'+user+'</a>');
+                        var $a = $('<a href="#" class="list-group-item list-group-item-action">' + user.username + '</a>');
+                        $a.on('click', function() { createRoom(user.id); });
+                        $('#searchResults').append($a);
                     });
                 }
             });
         } else {
             $('#searchResults').empty();
+        }
+    });
+
+    function createRoom(userId) {
+        $.ajax({
+            type: 'POST',
+            url: '/rooms/create_room/' + userId,
+            success: function(data) {
+                // Assuming you're using Socket.IO to handle real-time updates,
+                // you can emit an event to the server to notify the user about the new room.
+                socket.emit('new_room', {room_id: data.room_id});
+    
+                // Add the new room to the sidebar. This now creates a list group item.
+                $('#sidebar').append('<a href="#" class="list-group-item list-group-item-action room" onclick="loadRoom(' + data.room_id + ')">Room ' + data.room_id + '</a>');
+    
+                // Clear the search results.
+                $('#searchResults').empty();
+    
+                // Load the new room's chat history.
+                loadRoom(data.room_id);
+            },
+            error: function(data) {
+                alert(data.responseJSON.error);
+            }
+        });
+    }
+
+    function loadRoom(roomId) {
+        $.ajax({
+            url: '/rooms/room/' + roomId,
+            success: function(data) {
+                // Load the chat history.
+                $('#messages').empty();
+                data.messages.forEach(function(message) {
+                    $('#messages').append('<div class="message">' + message.text + '</div>');
+                });
+            },
+            error: function(data) {
+                alert(data.responseJSON.error);
+            }
+        });
+    }
+
+    $.ajax({
+        url: '/rooms/get_rooms',
+        success: function(data) {
+            // Load the rooms into the sidebar
+            data.rooms.forEach(function(room) {
+                var $roomLink = $('<a href="#" class="list-group-item list-group-item-action room">Room ' + room.id + '</a>');
+                $roomLink.on('click', function() { loadRoom(room.id); });
+                $('#sidebar').append($roomLink);
+            });
+            // You can optionally also load the chat history of the first room
+            if (data.rooms.length > 0) {
+                loadRoom(data.rooms[0].id);
+            }
+        },
+        error: function(data) {
+            alert(data.responseJSON.error);
         }
     });
 });

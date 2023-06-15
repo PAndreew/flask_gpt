@@ -1,21 +1,49 @@
-from flask import Blueprint, request, session, render_template, jsonify
+from flask import Blueprint, request, render_template, jsonify
 from flask_socketio import emit
-from flask_login import login_required
+from flask_login import login_required, current_user
 from ..app import db, socketio
 from ..models import Message, User, Room, UserRoom
+from ..aimodels import AIModelManager
+from sqlalchemy.orm import joinedload
 
 chat_blueprint = Blueprint('chat', __name__)
+
+# ai_models = {
+#     'openai': OpenAIAgent(),
+#     'dall-e': DallEAgent(),
+#     # Add more AI models here...
+# }
+
+# Initialize the AI model manager
+aimodel_manager = AIModelManager()
 
 @chat_blueprint.route('/chat')
 @login_required
 def chat():
     # The user is logged in, so show the chat page
-    return render_template('chat.html')
+
+    # Fetch the first room of the current user
+    first_room = (
+        Room.query
+        .options(joinedload(Room.users))
+        .filter(UserRoom.user_id == current_user.id)
+        .first()
+    )
+
+    room_id = first_room.id if first_room else None
+
+    return render_template('chat.html', room_id=room_id)
     
+
 @socketio.on('message')
 def handleMessage(data):
+    print("Calling handlemessage")
     raw_msg = data.get('message')
     room_id = data.get('room_id')
+    username = current_user.username
+
+    user = User.query.filter_by(username=username).first()
+    color = user.color if user else '#000000'
 
     # Parse the AI model name and the message from the raw message
     if raw_msg.startswith('#'):
@@ -25,15 +53,9 @@ def handleMessage(data):
         aimodel_name = None
         msg = raw_msg
 
-    # Get the user information
-    username = session.get('username')
-    user = User.query.filter_by(username=username).first()
-    color = user.color if user else '#000000'
-
-    # Check if the user is in the room
-    user_room = UserRoom.query.filter_by(user_id=user.id, room_id=room_id).first()
-    if not user_room:
-        return  # The user is not in the room, so don't process the message
+    # If an AI model name was specified, switch to that model
+    if aimodel_name:
+        aimodel_manager.switch_model(aimodel_name)
 
     # Save the message
     message = Message(text=msg, user_id=user.id, room_id=room_id)
@@ -43,21 +65,17 @@ def handleMessage(data):
     # Broadcast the message to all clients in the room
     emit('message', {'msg': msg, 'sender': user.username, 'color': color}, room=room_id)
 
-    # Get the AI response
-    room = Room.query.get(room_id)
-    if room:
-        # Look for the AI model with the specified name
-        aimodel = next((m for m in room.ai_models if m.name == aimodel_name), None)
-        if aimodel:
-            ai_output = aimodel.predict(human_input=msg)
+    # Generate the AI response
+    ai_output = aimodel_manager.generate_response(msg)
 
-            # Save the response
-            response = Message(text=ai_output, user_id=None, room_id=room_id)  # No user_id for AI responses
-            db.session.add(response)
-            db.session.commit()
+    # Save the response
+    response = Message(text=ai_output, user_id=None, room_id=room_id)  # No user_id for AI responses
+    db.session.add(response)
+    db.session.commit()
 
-            # Broadcast the AI response to all clients in the room
-            emit('message', {'msg': 'Assistant: ' + ai_output, 'sender': 'ai'}, room=room_id)
+    # Broadcast the AI response to all clients in the room
+    emit('message', {'msg': 'Assistant: ' + ai_output, 'sender': 'ai'}, room=room_id)
+
 
 @chat_blueprint.route('/search', methods=['GET'])
 def search():

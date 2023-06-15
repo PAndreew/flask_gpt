@@ -6,7 +6,9 @@ from flask_login import UserMixin
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(500), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id')) # New field
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'))
+    user = db.relationship('User', backref='messages') # Establish relationship
 
     def __repr__(self):
         return '<Message %r>' % self.text
@@ -15,6 +17,7 @@ class Message(db.Model):
         return {
             'id': self.id,
             'text': self.text,
+            'user_id': self.user_id, # Include in to_dict
             'room_id': self.room_id
         }
 

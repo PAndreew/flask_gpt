@@ -8,6 +8,11 @@ from .utils import SteamshipImageGenerationTool
 
 os.environ["STEAMSHIP_API_KEY"] = "0B5C6720-53DC-408F-B0FD-07EC0E6D212F"
 
+ai_model_colors = {
+    'openai': '#00A67E',
+    # Add more AI models and their colors here as necessary.
+}
+
 # AI Model Interface
 class AIModelInterface(ABC):
 
@@ -78,11 +83,13 @@ class AIModelManager:
             # Add more models as needed
         }
         self.current_model = self.models['openai']
+        self.current_model_name = 'openai'
         self.last_response = None
 
     def switch_model(self, model_name):
         if model_name in self.models:
             self.current_model = self.models[model_name]
+            self.current_model_name = model_name
 
     def generate_response(self, user_input):
         while True:

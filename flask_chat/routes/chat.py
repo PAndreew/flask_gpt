@@ -3,16 +3,10 @@ from flask_socketio import emit
 from flask_login import login_required, current_user
 from ..app import db, socketio
 from ..models import Message, User, Room, UserRoom
-from ..aimodels import AIModelManager
+from ..aimodels import AIModelManager, ai_model_colors
 from sqlalchemy.orm import joinedload
 
 chat_blueprint = Blueprint('chat', __name__)
-
-# ai_models = {
-#     'openai': OpenAIAgent(),
-#     'dall-e': DallEAgent(),
-#     # Add more AI models here...
-# }
 
 # Initialize the AI model manager
 aimodel_manager = AIModelManager()
@@ -36,6 +30,7 @@ def chat():
     
 
 @socketio.on('message')
+@socketio.on('message')
 def handleMessage(data):
     print("Calling handlemessage")
     raw_msg = data.get('message')
@@ -49,32 +44,34 @@ def handleMessage(data):
     if raw_msg.startswith('#'):
         aimodel_name, msg = raw_msg.split(' ', 1)
         aimodel_name = aimodel_name[1:]  # Remove the '#' prefix
-    else:
-        aimodel_name = None
-        msg = raw_msg
 
-    # If an AI model name was specified, switch to that model
-    if aimodel_name:
+        # If an AI model name was specified, switch to that model
         aimodel_manager.switch_model(aimodel_name)
 
-    # Save the message
-    message = Message(text=msg, user_id=user.id, room_id=room_id)
-    db.session.add(message)
+        # Generate the AI response
+        ai_output = aimodel_manager.generate_response(msg)
+
+        ai_color = ai_model_colors.get(aimodel_name, '#111111')
+
+        # Save the AI's response
+        ai_response = Message(text=ai_output, aimodel_name=aimodel_manager.current_model_name, user_id=None, room_id=room_id, message_color=ai_color)  # No user_id for AI responses
+        db.session.add(ai_response)
+        db.session.commit()
+
+        # Broadcast the AI's response to all clients in the room
+        emit('message', {'msg': 'Assistant: ' + ai_output, 'sender': 'ai', 'color': ai_color}, room=room_id)
+    else:
+        msg = raw_msg
+
+    # Save the user's message
+    user_message = Message(text=msg, user_id=user.id, room_id=room_id)
+    db.session.add(user_message)
     db.session.commit()
 
-    # Broadcast the message to all clients in the room
+    # Broadcast the user's message to all clients in the room
     emit('message', {'msg': msg, 'sender': user.username, 'color': color}, room=room_id)
 
-    # Generate the AI response
-    ai_output = aimodel_manager.generate_response(msg)
 
-    # Save the response
-    response = Message(text=ai_output, user_id=None, room_id=room_id)  # No user_id for AI responses
-    db.session.add(response)
-    db.session.commit()
-
-    # Broadcast the AI response to all clients in the room
-    emit('message', {'msg': 'Assistant: ' + ai_output, 'sender': 'ai'}, room=room_id)
 
 
 @chat_blueprint.route('/search', methods=['GET'])

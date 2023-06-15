@@ -4,9 +4,9 @@ from flask_socketio import join_room, emit
 from ..app import db, socketio
 from ..models import Message, User, Room, UserRoom
 from ..utils import notify_user
+from ..aimodels import ai_model_colors
 
 rooms_blueprint = Blueprint('room', __name__)
-
 
 @socketio.on('join')
 def on_join(data):
@@ -34,13 +34,32 @@ def on_join(data):
 @rooms_blueprint.route('/room/<int:room_id>', methods=['GET'])
 def room(room_id):
     room = Room.query.get(room_id)
-    
+
     if not room or not any(user_room.user_id == current_user.id for user_room in room.users):
         current_app.logger.info(f"current_user: {current_user}, room.users: {[str(user_room) for user_room in room.users]}")
         return jsonify({"error": "Room not found or you are not a part of this room."}), 404
 
     messages = Message.query.filter_by(room_id=room.id).all()  # Get the room's messages.
-    return jsonify(room=room.to_dict(), messages=[message.to_dict() for message in messages]), 200
+
+    # Modify each message's dictionary to include the sender's username and color.
+    message_dicts = []
+    for message in messages:
+        msg_dict = message.to_dict()
+
+        if message.aimodel_name:
+            # AI message
+            msg_dict['sender'] = 'ai'
+            msg_dict['color'] = ai_model_colors.get(message.aimodel_name, '#111111')  # Get the color for this AI model, or default to '#111111'
+        else:
+            # User message
+            user = User.query.get(message.user_id)
+            msg_dict['sender'] = user.username
+            msg_dict['color'] = user.color
+
+        message_dicts.append(msg_dict)
+
+    return jsonify(room=room.to_dict(), messages=message_dicts), 200
+
 
 
 @rooms_blueprint.route('/create_room/<int:user_id>', methods=['POST'])

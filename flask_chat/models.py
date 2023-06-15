@@ -6,19 +6,21 @@ from flask_login import UserMixin
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(500), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id')) # New field
-    room_id = db.Column(db.Integer, db.ForeignKey('room.id'))
-    user = db.relationship('User', backref='messages') # Establish relationship
-
-    def __repr__(self):
-        return '<Message %r>' % self.text
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # Foreign key from the User table
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'))  # Foreign key from the Room table
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    aimodel_name = db.Column(db.String(50))  # New field to store the name of the AI model that responded to this message
+    message_color = db.Column(db.String(20))  # New field to store the color of the sender or AI model 
 
     def to_dict(self):
         return {
             'id': self.id,
             'text': self.text,
-            'user_id': self.user_id, # Include in to_dict
-            'room_id': self.room_id
+            'user_id': self.user_id,
+            'room_id': self.room_id,
+            'timestamp': self.timestamp,
+            'aimodel_name': self.aimodel_name,  # Including new field in the returned dict
+            'message_color': self.message_color  # Including new field in the returned dict
         }
 
 class User(UserMixin, db.Model):

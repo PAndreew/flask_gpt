@@ -1,13 +1,13 @@
 $(document).ready(function() {
     var socket = io();
 
-    socket.on('connect', () => {
-        console.log('Socket connected');
-    });
+    // socket.on('connect', () => {
+    //     console.log('Socket connected');
+    // });
     
-    socket.on('disconnect', () => {
-        console.log('Socket disconnected');
-    });
+    // socket.on('disconnect', () => {
+    //     console.log('Socket disconnected');
+    // });
 
     $('#send').click(sendMessage);
     $('#m').keypress(function (e) {
@@ -19,6 +19,7 @@ $(document).ready(function() {
     socket.on('message', function(data){
         var card = $('<div>').addClass('card chat-message mb-3');
         var cardBody = $('<div>').addClass('card-body').text(data.msg);
+        console.log(data.msg);
 
         // Apply color to card body
         card.css('background-color', data.color); 
@@ -110,8 +111,27 @@ $(document).ready(function() {
                 // Load the chat history.
                 $('#messages').empty();
                 data.messages.forEach(function(message) {
-                    $('#messages').append('<div class="message">' + message.text + '</div>');
+                    var card = $('<div>').addClass('card chat-message mb-3');
+                    var cardBody = $('<div>').addClass('card-body').text(
+                        (message.sender ? message.sender + ": " : "") + message.text
+                    );
+                    console.log(message.color);
+
+                    // Apply color to card body
+                    card.css('background-color', message.color); 
+    
+                    card.append(cardBody);
+    
+                    if (message.sender == 'ai') {
+                        card.addClass('ai-message');
+                    }
+                    // else {
+                    //     card.addClass('client-message');
+                    // }
+    
+                    $('#messages').append(card);
                 });
+                $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
             },
             error: function(data) {
                 alert(data.responseJSON.error);

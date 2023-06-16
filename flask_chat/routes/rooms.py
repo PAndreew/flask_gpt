@@ -1,4 +1,4 @@
-from flask import Blueprint, session, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app
 from flask_login import current_user, login_required
 from flask_socketio import join_room, emit
 from ..app import db, socketio
@@ -11,10 +11,11 @@ rooms_blueprint = Blueprint('room', __name__)
 @socketio.on('join')
 def on_join(data):
     room_id = data['room_id']
-    username = session.get('username')
-    user = User.query.filter_by(username=username).first()
 
-    if not user:
+    # No need to fetch the username from the session
+    user = current_user
+
+    if not user.is_authenticated:
         emit('join_response', {'error': 'User not found.'}, room=request.sid)
         return
 
@@ -29,6 +30,7 @@ def on_join(data):
 
     join_room(room_id)
     emit('join_response', {'message': 'Successfully joined the room.', 'room_id': room_id}, room=request.sid)
+
 
 
 @rooms_blueprint.route('/room/<int:room_id>', methods=['GET'])

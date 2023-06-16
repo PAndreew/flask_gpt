@@ -1,14 +1,64 @@
 $(document).ready(function() {
-    var socket = io();
+    var socket;
+    var roomId;
 
-    // socket.on('connect', () => {
-    //     console.log('Socket connected');
-    // });
+    function initSocketConnection() {
+        if (socket) {
+            socket.close();
+        }
+
+        socket = io.connect('http://' + window.location.hostname + ':' + location.port, {
+            query: 'room_id=' + roomId
+        });
+
+        socket.on('connect', function() {
+            console.log("Connected to roomid" + roomId);
+            socket.emit('join', { room_id: roomId });
+        });
+
+        socket.on('join_response', function(data) {
+            if (data.error) {
+                // If there was an error joining the room, display an alert with the error message.
+                alert(data.error);
+            } else {
+                // If the user joined the room successfully, print a confirmation message to the console.
+                console.log(data.message);
+                console.log('Joined room: ' + data.room_id);
+            }
+        });
+
+        socket.on('message', handleReceivedMessage);
+    }
+
+    function handleReceivedMessage(data) {
+        var card = $('<div>').addClass('card chat-message mb-3');
+        var cardBody = $('<div>').addClass('card-body').text(data.msg);
+
+        card.css('background-color', data.color);
+        card.append(cardBody);
+
+        if (data.sender == 'ai') {
+            card.addClass('ai-message');
+        }
+
+        $('#messages').append(card);
+        $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
+    }
+
+    function sendMessage() {
+        var message = $('#m').val();
+        socket.emit('message', { message: message, room_id: roomId });
+        $('#m').val('');
+        $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
+        return false;
+    }
+
+    $(document).on('click', '.room', function() {
+        roomId = $(this).attr('id').replace('room_', '');
+        initSocketConnection();
+        loadRoom(roomId);
+    });
     
-    // socket.on('disconnect', () => {
-    //     console.log('Socket disconnected');
-    // });
-
     $('#send').click(sendMessage);
     $('#m').keypress(function (e) {
         if (e.which == 13) {  // Enter key
@@ -16,38 +66,6 @@ $(document).ready(function() {
         }
     });
 
-    socket.on('message', function(data){
-        var card = $('<div>').addClass('card chat-message mb-3');
-        var cardBody = $('<div>').addClass('card-body').text(data.msg);
-        console.log(data.msg);
-
-        // Apply color to card body
-        card.css('background-color', data.color); 
-
-        card.append(cardBody);
-
-        if (data.sender == 'ai') {
-            card.addClass('ai-message');
-        }
-        // } else {
-        //     card.addClass('client-message');
-        // }
-                        
-        $('#messages').append(card);
-        $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
-    });
-
-
-    function sendMessage() {
-        console.log('Room ID:', roomId);  // Debugging line
-        var message = $('#m').val();
-        console.log(roomId);
-        socket.emit('message', { message: message, room_id: roomId });
-        $('#m').val('');
-        $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
-        return false;
-    }
-    
     $('#logoutButton').click(function() {
         $.get('/logout', function() {
             window.location.href = '/login';
@@ -115,7 +133,6 @@ $(document).ready(function() {
                     var cardBody = $('<div>').addClass('card-body').text(
                         (message.sender ? message.sender + ": " : "") + message.text
                     );
-                    console.log(message.color);
 
                     // Apply color to card body
                     card.css('background-color', message.color); 
@@ -142,17 +159,18 @@ $(document).ready(function() {
     $.ajax({
         url: '/rooms/get_rooms',
         success: function(data) {
-            // Check if there are rooms
             if (data.rooms.length > 0) {
-                // Load the rooms into the sidebar
                 data.rooms.forEach(function(room) {
-                    $('#sidebar').append('<a href="#" id="room_' + room.id + '" class="list-group-item list-group-item-action room">Room ' + room.id + '</a>');
-                    $('#room_' + room.id).click(function() { loadRoom(room.id); });
+                    var roomLink = $('<a>')
+                        .attr('id', 'room_' + room.id)
+                        .addClass('list-group-item list-group-item-action room')
+                        .text('Room ' + room.id);
+                    $('#sidebar').append(roomLink);
                 });
-                // Load the chat history of the first room
-                loadRoom(data.rooms[0].id);
+                roomId = data.rooms[0].id;
+                initSocketConnection();
+                loadRoom(roomId);
             } else {
-                // No rooms exist, show a message to the user
                 $('#sidebar').append('<p class="text-center">No rooms found. Click <a href="/create_room_page">here</a> to create a new one.</p>');
             }
         },

@@ -18,10 +18,10 @@
 }
 
 .chat-message {
-    border: 1px solid black;
+    /* border: 1px solid black; */
     border-radius: 30px;
-    margin-bottom: 10px;
-    padding: 10px;
+    margin-bottom: 5px;
+    padding: 1px;
     width: 75%;
 }
 

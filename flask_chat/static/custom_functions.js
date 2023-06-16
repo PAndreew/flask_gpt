@@ -33,14 +33,17 @@ $(document).ready(function() {
     function handleReceivedMessage(data) {
         var card = $('<div>').addClass('card chat-message mb-3');
         var cardBody = $('<div>').addClass('card-body').text(data.msg);
-
+    
         card.css('background-color', data.color);
         card.append(cardBody);
-
+    
+        // Check if the sender is 'ai' or the current user
         if (data.sender == 'ai') {
-            card.addClass('ai-message');
+            card.addClass('response-message');
+        } else if (data.sender == current_username) {
+            card.addClass('client-message');
         }
-
+    
         $('#messages').append(card);
         $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
     }
@@ -133,19 +136,20 @@ $(document).ready(function() {
                     var cardBody = $('<div>').addClass('card-body').text(
                         (message.sender ? message.sender + ": " : "") + message.text
                     );
-
+            
                     // Apply color to card body
                     card.css('background-color', message.color); 
-    
+            
                     card.append(cardBody);
-    
+                    console.log(message.sender);
+                    console.log(current_username);
+                    // Check if the sender is 'ai' or the current user
                     if (message.sender == 'ai') {
-                        card.addClass('ai-message');
+                        card.addClass('response-message');
+                    } else if (message.sender == current_username) {
+                        card.addClass('client-message');
                     }
-                    // else {
-                    //     card.addClass('client-message');
-                    // }
-    
+            
                     $('#messages').append(card);
                 });
                 $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);

@@ -18,9 +18,11 @@
 }
 
 .chat-message {
+    border: 1px solid black;
+    border-radius: 30px;
     margin-bottom: 10px;
     padding: 10px;
-    border: 1px solid black;
+    width: 75%;
 }
 
 /* .client-message {
@@ -41,6 +43,17 @@
     outline: none !important;
     box-shadow: none !important;
 }
+
+.response-message {
+    margin-right: auto; /* pushes the message to the left */
+}
+
+
+.client-message {
+    margin-left: auto; /* pushes the message to the right */
+}
+
+
 
 #chat-window {
     margin-top: 70px;

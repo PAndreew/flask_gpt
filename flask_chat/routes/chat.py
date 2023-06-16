@@ -26,7 +26,7 @@ def chat():
 
     room_id = first_room.id if first_room else None
 
-    return render_template('chat.html', room_id=room_id)
+    return render_template('chat.html', room_id=room_id, username=current_user.username)
     
 
 # @socketio.on('connect')

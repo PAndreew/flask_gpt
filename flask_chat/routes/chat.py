@@ -28,16 +28,7 @@ def chat():
 
     return render_template('chat.html', room_id=room_id, username=current_user.username)
     
-
-# @socketio.on('connect')
-# def test_connect():
-#     emit('message', {'msg': 'Connected', 'sender': 'Server', 'color': '#000000'})
-
-
-# @socketio.on('message')
-# def handle_message(data):
-#     print('Received message: ' + str(data))
-
+from threading import Thread
 
 @socketio.on('message')
 def handleMessage(data):
@@ -50,31 +41,38 @@ def handleMessage(data):
     color = user.color if user else '#000000'
 
     # Parse the AI model name and the message from the raw message
-    ai_output = None
+    # ai_output = None
     if raw_msg.startswith('#'):
         aimodel_name, msg = raw_msg.split(' ', 1)
         aimodel_name = aimodel_name[1:]  # Remove the '#' prefix
 
-        # If an AI model name was specified, switch to that model
+        # Save the user's message
+        user_message = Message(text=msg, user_id=user.id, room_id=room_id)
+        db.session.add(user_message)
+        db.session.commit()
+
+        # Broadcast the user's message to all clients in the room
+        emit('message', {'msg': msg, 'sender': user.username, 'color': color}, room=room_id)
+        print('Message sent to room', room_id)
+
+        # If an AI model name was specified, switch to that model and generate the AI response
         aimodel_manager.switch_model(aimodel_name)
-
-        # Generate the AI response
-        ai_output = aimodel_manager.generate_response(msg)
-
-        ai_color = ai_model_colors.get(aimodel_name, '#111111')
-
+        Thread(target=generate_ai_response, args=(aimodel_manager, msg, aimodel_name, room_id)).start()
     else:
         msg = raw_msg
 
-    # Save the user's message
-    user_message = Message(text=msg, user_id=user.id, room_id=room_id)
-    db.session.add(user_message)
-    db.session.commit()
+        # Save the user's message
+        user_message = Message(text=msg, user_id=user.id, room_id=room_id)
+        db.session.add(user_message)
+        db.session.commit()
 
-    # Broadcast the user's message to all clients in the room
-    emit('message', {'msg': msg, 'sender': user.username, 'color': color}, room=room_id)
-    print('Message sent to room', room_id)
+        # Broadcast the user's message to all clients in the room
+        emit('message', {'msg': msg, 'sender': user.username, 'color': color}, room=room_id)
+        print('Message sent to room', room_id)
 
+def generate_ai_response(aimodel_manager, msg, aimodel_name, room_id):
+    ai_output = aimodel_manager.generate_response(msg)
+    ai_color = ai_model_colors.get(aimodel_name, '#111111')
     if ai_output:
         # Save the AI's response
         ai_response = Message(text=ai_output, aimodel_name=aimodel_manager.current_model_name, user_id=None, room_id=room_id, message_color=ai_color)  # No user_id for AI responses
@@ -82,8 +80,7 @@ def handleMessage(data):
         db.session.commit()
 
         # Broadcast the AI's response to all clients in the room
-        emit('message', {'msg': 'Assistant: ' + ai_output, 'sender': 'ai', 'color': ai_color}, room=room_id)
-
+        socketio.emit('message', {'msg': 'Assistant: ' + ai_output, 'sender': 'ai', 'color': ai_color}, room=room_id)
 
 @chat_blueprint.route('/search', methods=['GET'])
 def search():

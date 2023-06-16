@@ -21,8 +21,9 @@
     /* border: 1px solid black; */
     border-radius: 30px;
     margin-bottom: 5px;
+    max-width: 75%;
     padding: 1px;
-    width: 75%;
+    width: fit-content;
 }
 
 /* .client-message {

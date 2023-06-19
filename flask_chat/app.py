@@ -1,13 +1,28 @@
-from flask import Flask, Blueprint, session, redirect, url_for, render_template
+import eventlet
+eventlet.monkey_patch()
+from celery import Celery
+from flask import Flask, session, redirect, url_for, render_template
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
-from langchain import OpenAI, ConversationChain, LLMChain, PromptTemplate
+from langchain import OpenAI, LLMChain, PromptTemplate
 from langchain.memory import ConversationBufferWindowMemory
 import os
 
+
+class Config:
+    broker_url = 'redis://localhost:6379/0'
+    result_backend = 'redis://localhost:6379/0'
+    SECRET_KEY = 'secret!'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///messages.db'
+    session_cookie_secure = True
+
 db = SQLAlchemy()
 socketio = SocketIO()
+# socketio = SocketIO(app, message_queue=Config.broker_url)
+
+celery = Celery(__name__, broker=Config.broker_url, backend=Config.result_backend)
+
 
 # Configuration and initialization code for OpenAI, prompt, chatgpt_chain, etc.
     
@@ -41,12 +56,20 @@ chatgpt_chain = LLMChain(
     memory=ConversationBufferWindowMemory(k=2),
 )
 
+
+
+global app
 def create_app():
+    global app
+    # global socketio
+    # global celery
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'secret!'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///messages.db'
-    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config.from_object(Config)
     login_manager = LoginManager(app)  # This line is essential
+    # celery = make_celery(app)
+    celery.conf.update(app.config)
+    # socketio = SocketIO(message_queue='redis://')
+
 
     @app.route('/')
     def index():
@@ -59,7 +82,7 @@ def create_app():
             
     db.init_app(app)
     # db = SQLAlchemy(app)
-    socketio.init_app(app)
+    socketio.init_app(app, message_queue=Config.broker_url)
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -79,4 +102,5 @@ def create_app():
     with app.app_context():
         db.create_all()  # Create database tables for our data models
     
+    print(id(app))
     return app

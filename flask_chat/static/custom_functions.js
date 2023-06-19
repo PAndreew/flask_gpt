@@ -141,8 +141,6 @@ $(document).ready(function() {
                     card.css('background-color', message.color); 
             
                     card.append(cardBody);
-                    console.log(message.sender);
-                    console.log(current_username);
                     // Check if the sender is 'ai' or the current user
                     if (message.sender == 'ai') {
                         card.addClass('response-message');

@@ -3,7 +3,8 @@ from flask_socketio import emit
 from flask_login import login_required, current_user
 from ..app import db, socketio
 from ..models import Message, User, Room, UserRoom
-from ..aimodels import AIModelManager, ai_model_colors
+from ..aimodels import AIModelManager
+from ..tasks import generate_ai_response
 from sqlalchemy.orm import joinedload
 
 chat_blueprint = Blueprint('chat', __name__)
@@ -28,8 +29,6 @@ def chat():
 
     return render_template('chat.html', room_id=room_id, username=current_user.username)
     
-from threading import Thread
-
 @socketio.on('message')
 def handleMessage(data):
     print("Calling handlemessage")
@@ -41,7 +40,6 @@ def handleMessage(data):
     color = user.color if user else '#000000'
 
     # Parse the AI model name and the message from the raw message
-    # ai_output = None
     if raw_msg.startswith('#'):
         aimodel_name, msg = raw_msg.split(' ', 1)
         aimodel_name = aimodel_name[1:]  # Remove the '#' prefix
@@ -56,8 +54,25 @@ def handleMessage(data):
         print('Message sent to room', room_id)
 
         # If an AI model name was specified, switch to that model and generate the AI response
-        aimodel_manager.switch_model(aimodel_name)
-        Thread(target=generate_ai_response, args=(aimodel_manager, msg, aimodel_name, room_id)).start()
+        # generate_ai_response.delay(aimodel_name, msg, room_id)
+
+        task = generate_ai_response.delay(aimodel_name, msg, room_id)  # However you're calling the task
+
+        # Print the task id
+        print(f"Task ID: {task.id}")
+
+        # Print the task status
+        print(f"Task Status: {task.state}")
+
+        # Try to get the result of the task
+        result = task.result
+
+        # Print the result if it exists
+        if result is not None:
+            print(f"Task Result: {result}")
+        else:
+            print("Task has not finished yet.")
+
     else:
         msg = raw_msg
 
@@ -69,18 +84,6 @@ def handleMessage(data):
         # Broadcast the user's message to all clients in the room
         emit('message', {'msg': msg, 'sender': user.username, 'color': color}, room=room_id)
         print('Message sent to room', room_id)
-
-def generate_ai_response(aimodel_manager, msg, aimodel_name, room_id):
-    ai_output = aimodel_manager.generate_response(msg)
-    ai_color = ai_model_colors.get(aimodel_name, '#111111')
-    if ai_output:
-        # Save the AI's response
-        ai_response = Message(text=ai_output, aimodel_name=aimodel_manager.current_model_name, user_id=None, room_id=room_id, message_color=ai_color)  # No user_id for AI responses
-        db.session.add(ai_response)
-        db.session.commit()
-
-        # Broadcast the AI's response to all clients in the room
-        socketio.emit('message', {'msg': 'Assistant: ' + ai_output, 'sender': 'ai', 'color': ai_color}, room=room_id)
 
 @chat_blueprint.route('/search', methods=['GET'])
 def search():

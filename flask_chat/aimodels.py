@@ -76,20 +76,19 @@ class GenerativeAIModel(AIModelInterface):
 # AI Model Manager
 class AIModelManager:
 
-    def __init__(self):
+    def __init__(self, model_name='openai'):
         self.models = {
             'openai': OpenAILLMChain(),
-            'generative': GenerativeAIModel(),
+            # 'generative': GenerativeAIModel(),
             # Add more models as needed
         }
-        self.current_model = self.models['openai']
-        self.current_model_name = 'openai'
-        self.last_response = None
-
-    def switch_model(self, model_name):
         if model_name in self.models:
             self.current_model = self.models[model_name]
-            self.current_model_name = model_name
+        else:
+            # Handle invalid model_name
+            pass
+        self.current_model_name = model_name
+        self.last_response = None
 
     def generate_response(self, user_input):
         while True:

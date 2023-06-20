@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 
 from enum import Enum
 from typing import TYPE_CHECKING, Dict, Optional
@@ -16,6 +17,9 @@ from steamship import Steamship
 import random
 from .models import Notification
 from .app import db
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = 'uploads'
 
 def generate_light_color():
     # Generate a random hue
@@ -31,6 +35,25 @@ def notify_user(user, message):
         db.session.commit()
     except Exception as e:
         print(f"Failed to notify user {user.id}: {e}")
+
+
+def upload_to_server(file_content, file_type):
+    # Ensuring the upload folder exists
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
+
+    # Creating a secure filename
+    filename = secure_filename(f"{os.urandom(16).hex()}.{file_type}")
+
+    # Saving the file
+    file_path = os.path.join(UPLOAD_FOLDER, filename)
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    # Creating a URL to access the file
+    file_url = f"/{UPLOAD_FOLDER}/{filename}"
+    return file_url
+
 
 """This tool allows agents to generate images using Steamship.
 

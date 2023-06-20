@@ -31,3 +31,6 @@ def generate_ai_response(model_name, msg, room_id):
             # Broadcast the AI's response to all clients in the room
             socketio.emit('message', {'msg': 'Assistant: ' + ai_output, 'sender': 'ai', 'color': ai_color}, room=room_id)
 
+@celery.task
+def on_task_done(result):
+    print(f"Task Result: {result}")

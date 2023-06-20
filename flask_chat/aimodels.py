@@ -58,8 +58,14 @@ class OpenAILLMChain(LLMChainModel):
     def __init__(self, temperature=0, verbose=True, memory_k=2):
         super().__init__(llm=OpenAI(temperature=temperature), verbose=verbose, memory_k=memory_k)
 
+    def generate_response(self, user_input):
+        text = super().generate_response(user_input)
+        return {
+            'type': 'text',
+            'content': text
+        }
 
-# Class for Generative AI models
+
 class GenerativeAIModel(AIModelInterface):
 
     def __init__(self, temperature=0, verbose=True, model_name="dall-e", agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION):
@@ -69,11 +75,13 @@ class GenerativeAIModel(AIModelInterface):
 
     def generate_response(self, user_input):
         # Use the Generative AI model to generate a response
-        response = self.agent.run(user_input)
-        return response
+        content = self.agent.run(user_input)
+        return {
+            'type': 'image',  # This is assuming your generative model always returns an image.
+            'content': content
+        }
 
 
-# AI Model Manager
 class AIModelManager:
 
     def __init__(self, model_name='openai'):
@@ -96,3 +104,4 @@ class AIModelManager:
             if response != self.last_response:
                 self.last_response = response
                 return response
+

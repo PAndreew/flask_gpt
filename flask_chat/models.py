@@ -5,7 +5,9 @@ from flask_login import UserMixin
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.String(500), nullable=False)
+    text = db.Column(db.String(500), nullable=True)
+    media_url = db.Column(db.String(500), nullable=True)  # New field to store the URL of any generated media
+    media_type = db.Column(db.String(20), nullable=True)  # New field to store the type of the generated media
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # Foreign key from the User table
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'))  # Foreign key from the Room table
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -16,6 +18,8 @@ class Message(db.Model):
         return {
             'id': self.id,
             'text': self.text,
+            'media_url': self.media_url,
+            'media_type': self.media_type,
             'user_id': self.user_id,
             'room_id': self.room_id,
             'timestamp': self.timestamp,

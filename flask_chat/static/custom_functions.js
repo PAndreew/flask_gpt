@@ -32,10 +32,23 @@ $(document).ready(function() {
 
     function handleReceivedMessage(data) {
         var card = $('<div>').addClass('card chat-message mb-3');
-        var cardBody = $('<div>').addClass('card-body').text(data.msg);
-    
         card.css('background-color', data.color);
-        card.append(cardBody);
+        if (data.type == 'text') {
+            var cardBody = $('<div>').addClass('card-body').text(data.msg);
+            card.append(cardBody);
+        } else if (data.type == 'image') {
+            var image = $('<img>').attr('src', data.msg);
+            card.append(image);
+        } else if (data.type == 'audio') {
+            var audio = $('<audio controls>').attr('src', data.msg);
+            card.append(audio);
+        } else if (data.type == 'video') {
+            var video = $('<video controls>').attr('src', data.msg);
+            card.append(video);
+        } else {
+            // Invalid message type
+            return;
+        }
     
         // Check if the sender is 'ai' or the current user
         if (data.sender == 'ai') {

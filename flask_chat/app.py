@@ -70,7 +70,6 @@ def create_app():
     celery.conf.update(app.config)
     # socketio = SocketIO(message_queue='redis://')
 
-
     @app.route('/')
     def index():
         if 'username' in session:

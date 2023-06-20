@@ -32,34 +32,41 @@ $(document).ready(function() {
 
     function handleReceivedMessage(data) {
         var card = $('<div>').addClass('card chat-message mb-3');
-        card.css('background-color', data.color);
-        if (data.type == 'text') {
-            var cardBody = $('<div>').addClass('card-body').text(data.msg);
+        
+        var messageColor = data.sender === 'ai' ? data.message_color : data.color;
+        card.css('background-color', messageColor);
+    
+        var messageText = data.sender ? (data.sender + ": ") : "";
+        
+        if (!data.media_type || data.media_type === 'text') {
+            messageText += data.msg;
+            var cardBody = $('<div>').addClass('card-body').text(messageText);
             card.append(cardBody);
-        } else if (data.type == 'image') {
-            var image = $('<img>').attr('src', data.msg);
+        } else if (data.media_type === 'image') {
+            var image = $('<img>').attr('src', data.media_url);
             card.append(image);
-        } else if (data.type == 'audio') {
-            var audio = $('<audio controls>').attr('src', data.msg);
+        } else if (data.media_type === 'audio') {
+            var audio = $('<audio controls>').attr('src', data.media_url);
             card.append(audio);
-        } else if (data.type == 'video') {
-            var video = $('<video controls>').attr('src', data.msg);
+        } else if (data.media_type === 'video') {
+            var video = $('<video controls>').attr('src', data.media_url);
             card.append(video);
         } else {
-            // Invalid message type
+            // Invalid media type
             return;
         }
     
         // Check if the sender is 'ai' or the current user
-        if (data.sender == 'ai') {
+        if (data.sender === 'ai') {
             card.addClass('response-message');
-        } else if (data.sender == current_username) {
+        } else if (data.sender === current_username) {
             card.addClass('client-message');
         }
     
         $('#messages').append(card);
         $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
     }
+    
 
     function sendMessage() {
         var message = $('#m').val();
@@ -146,21 +153,35 @@ $(document).ready(function() {
                 $('#messages').empty();
                 data.messages.forEach(function(message) {
                     var card = $('<div>').addClass('card chat-message mb-3');
-                    var cardBody = $('<div>').addClass('card-body').text(
-                        (message.sender ? message.sender + ": " : "") + message.text
-                    );
-            
-                    // Apply color to card body
-                    card.css('background-color', message.color); 
-            
-                    card.append(cardBody);
+                    card.css('background-color', message.message_color);
+    
+                    // Prepend sender's username to text messages
+                    var messageText = (message.sender && !message.media_type ? message.sender + ": " : "") + message.text;
+    
+                    if (!message.media_type) {
+                        var cardBody = $('<div>').addClass('card-body').text(messageText);
+                        card.append(cardBody);
+                    } else if (message.media_type == 'image') {
+                        var image = $('<img>').attr('src', message.media_url);
+                        card.append(image);
+                    } else if (message.media_type == 'audio') {
+                        var audio = $('<audio controls>').attr('src', message.media_url);
+                        card.append(audio);
+                    } else if (message.media_type == 'video') {
+                        var video = $('<video controls>').attr('src', message.media_url);
+                        card.append(video);
+                    } else {
+                        // Invalid media type
+                        return;
+                    }
+    
                     // Check if the sender is 'ai' or the current user
                     if (message.sender == 'ai') {
                         card.addClass('response-message');
                     } else if (message.sender == current_username) {
                         card.addClass('client-message');
                     }
-            
+    
                     $('#messages').append(card);
                 });
                 $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);

@@ -81,13 +81,19 @@ class GenerativeAIModel(AIModelInterface):
             'content': content
         }
 
+class StableDiffusionAgent(GenerativeAIModel):
 
+    def __init__(self, temperature=0.5, verbose=True, agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION):
+        # Call the parent constructor with the specific model_name
+        super().__init__(temperature=temperature, verbose=verbose, model_name="stable-diffusion", agent_type=agent_type)
+
+    
 class AIModelManager:
 
     def __init__(self, model_name='openai'):
         self.models = {
             'openai': OpenAILLMChain(),
-            # 'generative': GenerativeAIModel(),
+            'sd': StableDiffusionAgent(),
             # Add more models as needed
         }
         if model_name in self.models:

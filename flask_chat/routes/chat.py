@@ -45,22 +45,13 @@ def handleMessage(data):
     user = User.query.filter_by(username=username).first()
     color = user.color if user else '#000000'
 
-    message_type = 'text'  # default message type is text
+    aimodel_name, msg, media_type, media_url, message_color = None, raw_msg, None, None, color
 
-    # Parse the AI model name and the message from the raw message
+    # Check if message is from an AI model
     if raw_msg.startswith('#'):
         aimodel_name, msg = raw_msg.split(' ', 1)
         aimodel_name = aimodel_name[1:]  # Remove the '#' prefix
-
-        # Save the user's message
-        user_message = Message(text=msg, user_id=user.id, room_id=room_id)
-
-        db.session.add(user_message)
-        db.session.commit()
-
-        # Broadcast the user's message to all clients in the room
-        emit('message', {'msg': msg, 'type': message_type, 'sender': user.username, 'color': color}, room=room_id)
-        print('Message sent to room', room_id)
+        message_color = color  # AI messages use color from User
 
         task = generate_ai_response.apply_async(args=[aimodel_name, msg, room_id], link=on_task_done)
 
@@ -73,34 +64,54 @@ def handleMessage(data):
         # Try to get the result of the task
         result = task.result
 
-        # Print the result if it exists
+        # If the result exists
         if result is not None:
             print(f"Task Result: {result}")
             if result["type"] == "text":
-                user_message.text = result["content"]
+                msg = result["content"]
             else:
-                user_message.media_type = result["type"]
-                message_type = result["type"]
-                # Here you would need to upload the content to your storage service and get the URL
-                user_message.media_url = upload_to_server(result["content"], result["type"])
+                media_type = result["type"]
+                media_url = upload_to_server(result["content"], media_type)  # upload the content to your storage service
+
+            # Broadcast the AI's message to all clients in the room
+            emit('message', {
+                'msg': msg,
+                'media_type': media_type,
+                'sender': 'ai',
+                'color': color,
+                'media_url': media_url,
+                'message_color': message_color
+            }, room=room_id)
+
+            print('AI Message sent to room', room_id)
         else:
             print("Task has not finished yet.")
 
-        # Broadcast the AI's message to all clients in the room
-        emit('message', {'msg': result["content"], 'type': message_type, 'sender': 'ai', 'color': color}, room=room_id)
-        print('AI Message sent to room', room_id)
+    # Save the user's or AI's message
+    user_message = Message(
+        text=msg, 
+        media_url=media_url, 
+        media_type=media_type, 
+        user_id=user.id, 
+        room_id=room_id, 
+        aimodel_name=aimodel_name, 
+        message_color=message_color
+    )
+    db.session.add(user_message)
+    db.session.commit()
 
-    else:
-        msg = raw_msg
+    # Broadcast the user's message to all clients in the room
+    emit('message', {
+        'msg': msg,
+        'media_type': media_type,
+        'sender': user.username, 
+        'color': color,
+        'media_url': media_url,
+        'message_color': message_color
+    }, room=room_id)
 
-        # Save the user's message
-        user_message = Message(text=msg, user_id=user.id, room_id=room_id)
-        db.session.add(user_message)
-        db.session.commit()
+    print('Message sent to room', room_id)
 
-        # Broadcast the user's message to all clients in the room
-        emit('message', {'msg': msg, 'type': message_type, 'sender': user.username, 'color': color}, room=room_id)
-        print('Message sent to room', room_id)
 
 
 @chat_blueprint.route('/search', methods=['GET'])

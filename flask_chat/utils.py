@@ -13,11 +13,14 @@ from langchain.callbacks.manager import (
 from langchain.tools import BaseTool
 from langchain.tools.steamship_image_generation.utils import make_image_public
 from langchain.utils import get_from_dict_or_env
-from steamship import Steamship
+from steamship import Block, Steamship
 import random
+import re
+import io
 from .models import Notification
 from .app import db
 from werkzeug.utils import secure_filename
+from PIL import Image as PILImage
 
 UPLOAD_FOLDER = 'uploads'
 
@@ -37,22 +40,43 @@ def notify_user(user, message):
         print(f"Failed to notify user {user.id}: {e}")
 
 
-def upload_to_server(file_content, file_type):
-    # Ensuring the upload folder exists
-    if not os.path.exists(UPLOAD_FOLDER):
-        os.makedirs(UPLOAD_FOLDER)
+def upload_to_server(output):
+    """Save the multi-modal output from the agent."""
+    UUID_PATTERN = re.compile(
+        r"([0-9A-Za-z]{8}-[0-9A-Za-z]{4}-[0-9A-Za-z]{4}-[0-9A-Za-z]{4}-[0-9A-Za-z]{12})"
+    )
 
-    # Creating a secure filename
-    filename = secure_filename(f"{os.urandom(16).hex()}.{file_type}")
+    outputs = UUID_PATTERN.split(output)
+    outputs = [re.sub(r"^\W+", "", el) for el in outputs]  # Clean trailing and leading non-word characters
 
-    # Saving the file
-    file_path = os.path.join(UPLOAD_FOLDER, filename)
-    with open(file_path, "wb") as f:
-        f.write(file_content)
+    uploaded_urls = []
 
-    # Creating a URL to access the file
-    file_url = f"/{UPLOAD_FOLDER}/{filename}"
-    return file_url
+    for idx, output in enumerate(outputs):
+        maybe_block_id = UUID_PATTERN.search(output)
+        if maybe_block_id:
+            image_data = Block.get(Steamship(), _id=maybe_block_id.group()).raw()
+
+            # Ensure the upload folder exists
+            if not os.path.exists(UPLOAD_FOLDER):
+                os.makedirs(UPLOAD_FOLDER)
+
+            # Create a secure filename
+            filename = secure_filename(f"{os.urandom(16).hex()}.png")
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+
+            # Save the image file
+            image = PILImage.open(io.BytesIO(image_data))
+            image.save(file_path)
+
+            # Creating a URL to access the file
+            file_url = f"/{UPLOAD_FOLDER}/{filename}"
+            uploaded_urls.append(file_url)
+
+        else:
+            print(output, end="\n\n")
+
+    return uploaded_urls
+
 
 
 """This tool allows agents to generate images using Steamship.

@@ -24,7 +24,7 @@ def process_response(response, room_id, model_name):
         media_type = None
     elif response["type"] == "image":
         ai_output = "AI has generated an image."
-        media_url = upload_to_server(response["content"], response["type"])
+        media_url = upload_to_server(response["content"])
         media_type = "image"
     else:
         # Add more types if necessary

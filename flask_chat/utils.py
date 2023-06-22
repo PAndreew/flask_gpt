@@ -22,7 +22,9 @@ from .app import db
 from werkzeug.utils import secure_filename
 from PIL import Image as PILImage
 
-UPLOAD_FOLDER = 'uploads'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # This gets the directory of the current file
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static/uploads')
+
 
 def generate_light_color():
     # Generate a random hue
@@ -49,8 +51,6 @@ def upload_to_server(output):
     outputs = UUID_PATTERN.split(output)
     outputs = [re.sub(r"^\W+", "", el) for el in outputs]  # Clean trailing and leading non-word characters
 
-    uploaded_urls = []
-
     for idx, output in enumerate(outputs):
         maybe_block_id = UUID_PATTERN.search(output)
         if maybe_block_id:
@@ -69,14 +69,13 @@ def upload_to_server(output):
             image.save(file_path)
 
             # Creating a URL to access the file
-            file_url = f"/{UPLOAD_FOLDER}/{filename}"
-            uploaded_urls.append(file_url)
+            file_url = f"/uploads/{filename}"
+            return file_url  # Return the URL immediately after saving the image
 
         else:
             print(output, end="\n\n")
-
-    return uploaded_urls
-
+            
+    return None  # Return None if no image was processed
 
 
 """This tool allows agents to generate images using Steamship.

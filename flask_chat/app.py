@@ -63,7 +63,7 @@ def create_app():
     global app
     # global socketio
     # global celery
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='static', static_url_path='/static')
     app.config.from_object(Config)
     login_manager = LoginManager(app)  # This line is essential
     # celery = make_celery(app)

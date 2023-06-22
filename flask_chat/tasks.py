@@ -1,4 +1,4 @@
-#from flask import current_app
+from flask import url_for
 from flask_socketio import SocketIO
 from .models import Message
 from .app import db, celery, app, Config, socketio
@@ -43,11 +43,12 @@ def process_response(response, room_id, model_name):
         )
 
         db.session.add(ai_response)
-        print(media_type, media_url)
+        print(ai_response)
         db.session.commit()
 
     with app.test_request_context():
         # Broadcast the AI's response to all clients in the room
+        media_url = url_for('static', filename=media_url.lstrip('/')) if media_url else None
         socketio.emit('message', {
             'msg': ai_output, 
             'sender': 'ai', 

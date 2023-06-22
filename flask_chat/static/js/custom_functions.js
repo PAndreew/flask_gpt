@@ -32,12 +32,12 @@ $(document).ready(function() {
 
     function handleReceivedMessage(data) {
         var card = $('<div>').addClass('card chat-message mb-3');
-        
-        var messageColor = data.sender === 'ai' ? data.message_color : data.color;
+    
+        var messageColor = data.color;
         card.css('background-color', messageColor);
     
         var messageText = data.sender ? (data.sender + ": ") : "";
-        
+    
         if (!data.media_type || data.media_type === 'text') {
             messageText += data.msg;
             var cardBody = $('<div>').addClass('card-body').text(messageText);

@@ -48,10 +48,13 @@ def handleMessage(data):
         aimodel_name, msg = raw_msg.split(' ', 1)
         aimodel_name = aimodel_name[1:]  
 
-        user_message = Message(text=msg, user_id=user.id, room_id=room_id)
+        user_message = Message(text=msg, 
+                               user_id=user.id, 
+                               room_id=room_id,
+                               message_color=color)
         db.session.add(user_message)
         db.session.commit()
-        emit('message', {'msg': msg, 'sender': user.username, 'color': color}, room=room_id)
+        emit('message', {'msg': msg, 'sender': user.username, 'color': user_message.message_color}, room=room_id)
 
         # If an AI model name was specified, generate the AI response
         task = generate_ai_response.s(aimodel_name, msg) | process_response.s(room_id, aimodel_name)
@@ -61,7 +64,7 @@ def handleMessage(data):
         print(f"Task Status: {result.state}")
     else:
         msg = raw_msg
-        user_message = Message(text=msg, user_id=user.id, room_id=room_id)
+        user_message = Message(text=msg, user_id=user.id, room_id=room_id, message_color = color)
         db.session.add(user_message)
         db.session.commit()
         emit('message', {'msg': msg, 'sender': user.username, 'color': color}, room=room_id)

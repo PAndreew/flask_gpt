@@ -43,6 +43,7 @@ def process_response(response, room_id, model_name):
         )
 
         db.session.add(ai_response)
+        print(media_type, media_url)
         db.session.commit()
 
     with app.test_request_context():

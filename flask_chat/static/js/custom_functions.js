@@ -16,6 +16,15 @@ $(document).ready(function() {
             socket.emit('join', { room_id: roomId });
         });
 
+        socket.on('task_started', function() {
+            showLoadingIndicator();
+        });
+
+        // socket.on('task_completed', function() {
+        //     console.log('Received task_completed event');
+        //     $('#loading-indicator').remove();
+        // });
+        
         socket.on('join_response', function(data) {
             if (data.error) {
                 // If there was an error joining the room, display an alert with the error message.
@@ -31,6 +40,7 @@ $(document).ready(function() {
     }
 
     function handleReceivedMessage(data) {
+        $('#loading-indicator').remove();
         var card = $('<div>').addClass('card chat-message mb-3');
     
         var messageColor = data.color;
@@ -190,6 +200,19 @@ $(document).ready(function() {
                 alert(data.responseJSON.error);
             }
         });
+    }
+
+    function showLoadingIndicator(roomId) {
+        var loadingDots = $('<div>').addClass('loading-dots');
+        for (var i = 0; i < 3; i++) {
+            var dot = $('<div>').addClass('loading-dot');
+            loadingDots.append(dot);
+        }
+    
+        var card = $('<div>').addClass('card chat-message mb-3 response-message').attr('id', 'loading-indicator');
+        card.append(loadingDots);
+        $('#messages').append(card);
+        $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
     }
 
     $.ajax({

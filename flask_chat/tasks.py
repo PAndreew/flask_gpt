@@ -56,4 +56,7 @@ def process_response(response, room_id, model_name):
             'media_url': media_url,
             'media_type': media_type
         }, room=room_id)
+        # print("Message emitted, about to emit task_completed")
+        # socketio.emit('task_completed', room=room_id)
+        # print("Task completed emitted")
 

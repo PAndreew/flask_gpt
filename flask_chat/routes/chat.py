@@ -55,6 +55,7 @@ def handleMessage(data):
         db.session.add(user_message)
         db.session.commit()
         emit('message', {'msg': msg, 'sender': user.username, 'color': user_message.message_color}, room=room_id)
+        emit('task_started', room=room_id)  # Emit a new event
 
         # If an AI model name was specified, generate the AI response
         task = generate_ai_response.s(aimodel_name, msg) | process_response.s(room_id, aimodel_name)

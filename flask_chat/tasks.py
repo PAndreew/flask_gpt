@@ -51,7 +51,7 @@ def process_response(response, room_id, model_name):
         media_url = url_for('static', filename=media_url.lstrip('/')) if media_url else None
         socketio.emit('message', {
             'msg': ai_output, 
-            'sender': 'ai', 
+            'sender': 'OpenAI', 
             'color': ai_color,
             'media_url': media_url,
             'media_type': media_type

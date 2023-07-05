@@ -6,7 +6,9 @@ from langchain.agents import initialize_agent, AgentType
 # from langchain.tools import SteamshipImageGenerationTool
 from .utils import SteamshipImageGenerationTool
 
-os.environ["STEAMSHIP_API_KEY"] = "0B5C6720-53DC-408F-B0FD-07EC0E6D212F"
+steamship_api_key = os.getenv("STEAMSHIP_API_KEY")
+# steamship_tool = SteamshipImageGenerationTool(api_key=steamship_api_key)
+
 
 ai_model_colors = {
     'openai': '#00A67E',

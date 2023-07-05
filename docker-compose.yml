@@ -1,0 +1,25 @@
+version: '3'
+services:
+  web:
+    build: .
+    command: python run.py
+    volumes:
+      - .:/app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+    env_file:
+      - .env
+  worker:
+    build: .
+    command: celery -A flask_chat.celery_worker.celery worker --pool=eventlet --concurrency=50 -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+    env_file:
+      - .env
+  redis:
+    image: redis:latest
+

@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import eventlet
 eventlet.monkey_patch()
 from celery import Celery
@@ -9,13 +10,15 @@ from langchain import OpenAI, LLMChain, PromptTemplate
 from langchain.memory import ConversationBufferWindowMemory
 import os
 
+load_dotenv()
 
 class Config:
-    broker_url = 'redis://localhost:6379/0'
-    result_backend = 'redis://localhost:6379/0'
-    SECRET_KEY = 'secret!'
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///messages.db'
-    session_cookie_secure = True
+    broker_url = os.environ['BROKER_URL']
+    result_backend = os.environ['RESULT_BACKEND']
+    SECRET_KEY = os.environ['SECRET_KEY']
+    SQLALCHEMY_DATABASE_URI = os.environ['SQLALCHEMY_DATABASE_URI']
+    session_cookie_secure = os.environ['SESSION_COOKIE_SECURE'] == 'True'
+
 
 db = SQLAlchemy()
 socketio = SocketIO()
@@ -28,7 +31,7 @@ celery = Celery(__name__, broker=Config.broker_url, backend=Config.result_backen
     
 # Configure OpenAI
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+# os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
 # Define the template for the prompt
 template = """Assistant is a large language model trained by OpenAI.
@@ -55,8 +58,6 @@ chatgpt_chain = LLMChain(
     verbose=True,
     memory=ConversationBufferWindowMemory(k=2),
 )
-
-
 
 global app
 def create_app():

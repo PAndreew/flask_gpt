@@ -17,4 +17,4 @@ EXPOSE 8000
 ENV NAME World
 
 # Run Gunicorn when the container launches
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "run:app"]
+CMD ["gunicorn", "-k", "gevent", "-w", "1", "-b", "0.0.0.0:8000", "run:app"]

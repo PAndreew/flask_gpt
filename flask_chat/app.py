@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
-import eventlet
-eventlet.monkey_patch()
+from gevent import monkey
+monkey.patch_all()
 from celery import Celery
 from flask import Flask, session, redirect, url_for, render_template
 from flask_login import LoginManager

@@ -1,9 +1,8 @@
 *# Flask and Socket.IO
-/__pycache__/
-/*.pyc
+**/__pycache__/
+**/*.pyc
 /instance/
 /*.env
-*.pyc
 
 # Logs
 /logs/
